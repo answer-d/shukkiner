@@ -9,6 +9,9 @@ Description: >
 Globals:
   Function:
     Timeout: 3
+    Environment:
+      Variables:
+        TABLE_NAME: !Ref DynamoDBTable
 
 Resources:
   DynamoDBTable:
@@ -20,7 +23,21 @@ Resources:
       KeySchema:
         - AttributeName: item_id
           KeyType: HASH
-      
+      BillingMode: PAY_PER_REQUEST
+
+  DdbTableReadWritePolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: yama-Shukkiner-DdbTableReadWritePolicy
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - dynamodb:PutItem
+              - dynamodb:Update*
+              - dynamodb:Delete*
+            Resource: !GetAtt DynamoDBTable.Arn
 
   GetShukkinFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
@@ -29,16 +46,69 @@ Resources:
       Handler: app.get_shukkin
       Runtime: python3.8
       Events:
-        HelloWorld:
+        GetShukkin:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
-            Path: /hello
+            Path: /shukkin
             Method: get
+      Policies:
+        - arn:aws:iam::aws:policy/AmazonDynamoDBReadOnlyAccess
+
+  PostShukkinFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: shukkiner/
+      Handler: app.post_shukkin
+      Runtime: python3.8
+      Events:
+        PostShukkin:
+          Type: Api
+          Properties:
+            Path: /shukkin
+            Method: post
+      Policies:
+        - arn:aws:iam::aws:policy/AmazonDynamoDBReadOnlyAccess
+        - !Ref DdbTableReadWritePolicy
+
+  PatchShukkinFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: shukkiner/
+      Handler: app.patch_shukkin
+      Runtime: python3.8
+      Events:
+        PatchShukkin:
+          Type: Api
+          Properties:
+            Path: /shukkin/{item_id}
+            Method: patch
+      Policies:
+        - arn:aws:iam::aws:policy/AmazonDynamoDBReadOnlyAccess
+        - !Ref DdbTableReadWritePolicy
+
+  DeleteShukkinFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: shukkiner/
+      Handler: app.delete_shukkin
+      Runtime: python3.8
+      Events:
+        DeleteShukkin:
+          Type: Api
+          Properties:
+            Path: /shukkin/{item_id}
+            Method: delete
+      Policies:
+        - arn:aws:iam::aws:policy/AmazonDynamoDBReadOnlyAccess
+        - !Ref DdbTableReadWritePolicy
 
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
   # Find out more about other implicit resources you can reference within SAM
   # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
-  HelloWorldApi:
+  ShukkinerApi:
     Description: "API Gateway endpoint URL for Prod stage for Hello World function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/shukkin/"
+  DynamoDBTable:
+    Description: "DynamoDB table name"
+    Value: !Ref DynamoDBTable

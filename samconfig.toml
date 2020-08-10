@@ -1,0 +1,7 @@
+version=0.1
+[default.deploy.parameters]
+region = "ap-northeast-1"
+stack_name = "yama-Shukkiner"
+capabilities = "CAPABILITY_NAMED_IAM"
+s3_bucket = "yama-dev-for-serverless"
+tags = "Author=yamaguti-dxa App=Shukkiner"
