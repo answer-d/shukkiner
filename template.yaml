@@ -12,6 +12,8 @@ Globals:
     Environment:
       Variables:
         TABLE_NAME: !Ref DynamoDBTable
+  Api:
+    Cors: "'*'"
 
 Resources:
   DynamoDBTable:
@@ -102,6 +104,32 @@ Resources:
         - arn:aws:iam::aws:policy/AmazonDynamoDBReadOnlyAccess
         - !Ref DdbTableReadWritePolicy
 
+  ShukkinerGUIBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: yama-shukkiner-gui
+      WebsiteConfiguration:
+        IndexDocument: index.html
+      AccessControl: PublicRead
+
+  ShukkinerGUIBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref ShukkinerGUIBucket
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: PublicReadGetObject
+            Effect: Allow
+            Principal: "*"
+            Action:
+              - s3:GetObject
+            Resource:
+              - !Join
+                  - ""
+                  - - !GetAtt ShukkinerGUIBucket.Arn
+                    - "/*"
+
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
   # Find out more about other implicit resources you can reference within SAM
@@ -112,3 +140,9 @@ Outputs:
   DynamoDBTable:
     Description: "DynamoDB table name"
     Value: !Ref DynamoDBTable
+  ShukkinerGUIBucket:
+    Description: "S3 bucket name for hosting GUI"
+    Value: !Ref ShukkinerGUIBucket
+  ShukkinerGUI:
+    Description: "GUI URL"
+    Value: !GetAtt ShukkinerGUIBucket.WebsiteURL

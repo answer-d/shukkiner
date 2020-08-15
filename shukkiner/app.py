@@ -8,7 +8,8 @@ table = ddb.Table(os.environ["TABLE_NAME"])
 
 
 HEADERS = {
-    "Content-Type": "application/json; charset=UTF-8"
+    "Access-Control-Allow-Origin": "*",
+    "Content-Type": "application/json; charset=UTF-8",
 }
 
 # Helper class to convert a DynamoDB item to JSON.
